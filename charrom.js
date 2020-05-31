@@ -6,10 +6,16 @@ const fch = require('fetch');
 // check arguments
 let nesPath = 'samples/hello.nes';
 let distPath = '--';
+var flag_ascii = false;
 for (let i in process.argv) {
   // console.log(`${i} : ${process.argv[i]}`);
   if (i == 2) { nesPath  = process.argv[i]; }
-  if (i == 3) { distPath = process.argv[i]; }
+  if (i == 3) { 
+    if (process.argv[i] === 'ascii')
+      distPath = 'ascii';
+    else
+      distPath = process.argv[i];
+  }
 }
 console.log(`input : ${nesPath}, output : ${distPath}`);
 
@@ -65,13 +71,12 @@ const ctx = canvas.getContext('2d');
 ctx.fillStyle = "rgb(0, 0, 0)";
 ctx.fillRect(0, 0, DEFAULT_CANVAS_WIDTH, height);
 
-const renderSprite = (spriteNum) => {
-  let sprite_addr   = charactorROMsart + spriteNum * 16 ;
+const show_ascii = (spriteNum) => {
+  let sprite_addr = charactorROMsart + spriteNum * 16;
   let sprite_record = [].slice.call(nesrom, sprite_addr, sprite_addr + 15);
-  // console.log('sprite ', spriteNum, ' : addr = 0x' + toHEX(sprite_addr));
+  console.log('sprite ', spriteNum, ' : addr = 0x' + toHEX(sprite_addr));
   // console.log('  ' + strHEXarray(sprite_record));
   // display ascii art.
-  /*
   for (let i = 0; i < 8; i++) {
     let column ='  ';
     for (let j = 0; j < 8; j++) {
@@ -97,8 +102,9 @@ const renderSprite = (spriteNum) => {
     }
     console.log(column);
   }
-  */
-
+}
+const renderSprite = (spriteNum) => {
+  let sprite_addr = charactorROMsart + spriteNum * 16;
   for (let i = 0; i < 16; i++) {
     ctx.fillStyle = i > 7 ? "rgb(255, 255, 255)" : "rgb(128, 128, 128)";
     for (let j = 0; j < 8; j++) {
@@ -111,13 +117,19 @@ const renderSprite = (spriteNum) => {
   }
 };
 
-for (let i = 0; i < spritesNum; i++) {
-  renderSprite(i);
+if (distPath === 'ascii') {
+  for (let i = 0; i < spritesNum; i++) {
+    show_ascii(i); 
+  }
+} else {
+  for (let i = 0; i < spritesNum; i++) {
+    renderSprite(i);
+  }
+  const data = canvas.toDataURL().split(',')[1];
+  const buffer = new Buffer(data, 'base64');
+  if (distPath !== '--') 
+    fs.writeFileSync(distPath, buffer);
+  else
+    console.log('file output is skipped.');
 }
 
-const data = canvas.toDataURL().split(',')[1];
-const buffer = new Buffer(data, 'base64');
-if (distPath !== '--') 
-  fs.writeFileSync(distPath, buffer);
-else
-  console.log('file output is skipped.');
